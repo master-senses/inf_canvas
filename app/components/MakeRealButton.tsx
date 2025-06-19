@@ -1,6 +1,6 @@
 import { useEditor, useToasts } from 'tldraw'
 import { useCallback } from 'react'
-import { makeReal } from '../lib/makeReal'
+import { makeRealImages } from '../lib/makeRealImages'
 
 export function MakeRealButton() {
 	const editor = useEditor()
@@ -9,9 +9,9 @@ export function MakeRealButton() {
 	const handleClick = useCallback(async () => {
 		try {
 			const input = document.getElementById('openai_key_risky_but_cool') as HTMLInputElement
-			const apiKey = input?.value ?? null
-			if (!apiKey) throw Error('Make sure you include your API Key!')
-			await makeReal(editor, apiKey)
+			const apiKey = input?.value ?? ''
+			// API key is not strictly required for Replicate, but keeping the pattern
+			await makeRealImages(editor, apiKey)
 		} catch (e) {
 			console.error(e)
 			addToast({

@@ -18,7 +18,7 @@ import {
 export type PreviewShape = TLBaseShape<
 	'response',
 	{
-		html: string
+		image: string
 		w: number
 		h: number
 	}
@@ -29,7 +29,7 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 
 	getDefaultProps(): PreviewShape['props'] {
 		return {
-			html: '',
+			image: '',
 			w: (960 * 2) / 3,
 			h: (540 * 2) / 3,
 		}
@@ -53,29 +53,11 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 			[this.editor]
 		)
 
-		// Kind of a hack—we're preventing users from pinching-zooming into the iframe
-		const htmlToUse = shape.props.html.replace(
-			`</body>`,
-			`<script src="https://unpkg.com/html2canvas"></script><script>
-			// send the screenshot to the parent window
-  			window.addEventListener('message', function(event) {
-    		if (event.data.action === 'take-screenshot' && event.data.shapeid === "${shape.id}") {
-      		html2canvas(document.body, {useCors : true}).then(function(canvas) {
-        		const data = canvas.toDataURL('image/png');
-        		window.parent.postMessage({screenshot: data, shapeid: "${shape.id}"}, "*");
-      		});
-    		}
-  			}, false);
-			document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
-</body>`
-		)
-
 		return (
 			<HTMLContainer className="tl-embed-container" id={shape.id}>
-				{htmlToUse ? (
-					<iframe
-						id={`iframe-1-${shape.id}`}
-						srcDoc={htmlToUse}
+				{shape.props.image ? (
+					<img
+						src={shape.props.image}
 						width={toDomPrecision(shape.props.w)}
 						height={toDomPrecision(shape.props.h)}
 						draggable={false}
@@ -84,7 +66,10 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 							boxShadow,
 							border: '1px solid var(--color-panel-contrast)',
 							borderRadius: 'var(--radius-2)',
+							objectFit: 'contain',
+							backgroundColor: 'white',
 						}}
+						alt="Preview"
 					/>
 				) : (
 					<div
@@ -96,6 +81,7 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 							alignItems: 'center',
 							justifyContent: 'center',
 							border: '1px solid var(--color-muted-1)',
+							borderRadius: 'var(--radius-2)',
 						}}
 					>
 						<DefaultSpinner />
@@ -115,19 +101,19 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 						pointerEvents: 'all',
 					}}
 					onClick={() => {
-						if (navigator && navigator.clipboard) {
-							navigator.clipboard.writeText(shape.props.html)
+						if (navigator && navigator.clipboard && shape.props.image) {
+							navigator.clipboard.writeText(shape.props.image)
 							toast.addToast({
 								icon: 'duplicate',
-								title: 'Copied to clipboard',
+								title: 'Image URL copied to clipboard',
 							})
 						}
 					}}
 					onPointerDown={stopEventPropagation}
 				>
-					<TldrawUiIcon icon="duplicate" />
+					<TldrawUiIcon icon="duplicate" label="Copy image URL" />
 				</div>
-				{htmlToUse && (
+				{shape.props.image && (
 					<div
 						style={{
 							textAlign: 'center',
@@ -161,37 +147,8 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 	}
 
 	override toSvg(shape: PreviewShape, _ctx: SvgExportContext) {
-		// while screenshot is the same as the old one, keep waiting for a new one
-		return new Promise<ReactElement>((resolve, reject) => {
-			if (window === undefined) {
-				reject()
-				return
-			}
-
-			const windowListener = (event: MessageEvent) => {
-				if (event.data.screenshot && event.data?.shapeid === shape.id) {
-					window.removeEventListener('message', windowListener)
-					clearTimeout(timeOut)
-
-					resolve(<PreviewImage href={event.data.screenshot} shape={shape} />)
-				}
-			}
-			const timeOut = setTimeout(() => {
-				reject()
-				window.removeEventListener('message', windowListener)
-			}, 2000)
-			window.addEventListener('message', windowListener)
-			//request new screenshot
-			const firstLevelIframe = document.getElementById(`iframe-1-${shape.id}`) as HTMLIFrameElement
-			if (firstLevelIframe) {
-				firstLevelIframe.contentWindow?.postMessage(
-					{ action: 'take-screenshot', shapeid: shape.id },
-					'*'
-				)
-			} else {
-				console.error('first level iframe not found or not accessible')
-			}
-		})
+		// For images, we can directly return the image element
+		return Promise.resolve(<PreviewImage href={shape.props.image} shape={shape} />)
 	}
 
 	indicator(shape: PreviewShape) {
