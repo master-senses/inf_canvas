@@ -27,14 +27,14 @@ export async function makeRealImages(editor: Editor, apiKey: string) {
 	editor.createShape<PreviewShape>({
 		id: newShapeId2,
 		type: 'response',
-		x: maxX + 120, // to the right of the selection
+		x: 2*maxX + 60, // to the right of the selection
 		y: midY - (540 * 2) / 3 / 2, // half the height of the preview's initial shape
 		props: { image: '', w: (500 * 2) / 3, h: (540 * 2) / 3 },
 	})
 	editor.createShape<PreviewShape>({
 		id: newShapeId3,
 		type: 'response',
-		x: maxX + 60, // to the right of the selection
+		x: 3*maxX + 60, // to the right of the selection
 		y: midY - (540 * 2) / 3 / 2, // half the height of the preview's initial shape
 		props: { image: '', w: (500 * 2) / 3, h: (540 * 2) / 3 },
 	})

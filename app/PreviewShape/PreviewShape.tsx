@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { ReactElement } from 'react'
+import Image from 'next/image'
 import {
 	TLBaseShape,
 	BaseBoxShapeUtil,
@@ -56,7 +57,7 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 		return (
 			<HTMLContainer className="tl-embed-container" id={shape.id}>
 				{shape.props.image ? (
-					<img
+					<Image
 						src={shape.props.image}
 						width={toDomPrecision(shape.props.w)}
 						height={toDomPrecision(shape.props.h)}
@@ -105,13 +106,13 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 							navigator.clipboard.writeText(shape.props.image)
 							toast.addToast({
 								icon: 'duplicate',
-								title: 'Image URL copied to clipboard',
+								title: 'Image copied to clipboard',
 							})
 						}
 					}}
 					onPointerDown={stopEventPropagation}
 				>
-					<TldrawUiIcon icon="duplicate" label="Copy image URL" />
+					<TldrawUiIcon icon="duplicate" label="Copy image" />
 				</div>
 				{shape.props.image && (
 					<div
