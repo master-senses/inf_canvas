@@ -1,0 +1,10 @@
+cyber_girl - 20
+red_glasses - 15
+tree - 10
+dubai - 5
+lady_glasses - 5
+cyberpunk_car - 5
+cyberpuk_sword - 5
+man_car - 1
+robot_headshot - 1
+monster_backprofile - 1
