@@ -1,11 +1,16 @@
 import { Editor, createShapeId, TLShapeId } from 'tldraw'
 import { blobToBase64 } from './blobToBase64'
 import { getTextFromSelectedShapes } from './getSelectionAsText'
-import { generateImages } from './generateImages'
+import { generateStyleTransfer, generateSingleImage } from './generateImages'
 import { PreviewShape } from '../PreviewShape/PreviewShape'
 
+type ImageFetcher = (
+	sketchDataUrl: string,
+	selectionText: string,
+	strength: number
+) => Promise<string[]>
 
-export async function makeRealImages(editor: Editor, apiKey: string) {
+export async function makeRealWith(editor: Editor, imageFetcher: ImageFetcher) {
 	// 1. Make sure something is selected
 	const selectedShapes = editor.getSelectedShapes()
 	if (selectedShapes.length === 0) throw Error('First select something to make real.')
@@ -13,7 +18,7 @@ export async function makeRealImages(editor: Editor, apiKey: string) {
 	// 2. Grab the bounding box of the selection (used for positioning later)
 	const bounds = editor.getSelectionPageBounds()
 	if (!bounds) throw Error('Could not get bounds of selection.')
-		const { maxX, midY } = bounds
+	const { maxX, midY } = bounds
 	const newShapeId = createShapeId()
 	const newShapeId2 = createShapeId()
 	const newShapeId3 = createShapeId()
@@ -27,14 +32,14 @@ export async function makeRealImages(editor: Editor, apiKey: string) {
 	editor.createShape<PreviewShape>({
 		id: newShapeId2,
 		type: 'response',
-		x: 2*maxX + 60, // to the right of the selection
+		x: 1.3*maxX + 60, // to the right of the selection
 		y: midY - (540 * 2) / 3 / 2, // half the height of the preview's initial shape
 		props: { image: '', w: (500 * 2) / 3, h: (540 * 2) / 3 },
 	})
 	editor.createShape<PreviewShape>({
 		id: newShapeId3,
 		type: 'response',
-		x: 3*maxX + 60, // to the right of the selection
+		x: 1.2*maxX + 60, // to the right of the selection
 		y: midY - (540 * 2) / 3 / 2, // half the height of the preview's initial shape
 		props: { image: '', w: (500 * 2) / 3, h: (540 * 2) / 3 },
 	})
@@ -65,7 +70,7 @@ export async function makeRealImages(editor: Editor, apiKey: string) {
 	const newShapeIds = [newShapeId, newShapeId2, newShapeId3]
 
 	try {
-		const imageUrls: string[] = await generateImages(sketchDataUrl, selectionText, 0.4)
+		const imageUrls: string[] = await imageFetcher(sketchDataUrl, selectionText, 0.4)
 
 		if (!imageUrls || imageUrls.length === 0) {
 			throw Error('The image-generation service returned no images.')
@@ -93,3 +98,11 @@ export async function makeRealImages(editor: Editor, apiKey: string) {
 	console.error('Error generating images:', error)
 }
 } 
+
+export async function makeReal(editor: Editor) {
+	return makeRealWith(editor, generateSingleImage)
+}
+
+export async function StyleTransfer(editor: Editor) {
+	return makeRealWith(editor,  generateStyleTransfer)
+}

@@ -1,14 +1,14 @@
 import { useEditor, useToasts } from 'tldraw'
 import { useCallback } from 'react'
-import { makeReal } from '../lib/makeRealImages'
+import { StyleTransfer } from '../lib/makeRealImages'
 
-export function MakeRealButton() {
+export function StyleTransferButton() {
 	const editor = useEditor()
 	const { addToast } = useToasts()
 
 	const handleClick = useCallback(async () => {
 		try {
-			await makeReal(editor)
+			await StyleTransfer(editor)
 		} catch (e) {
 			console.error(e)
 			addToast({
@@ -21,7 +21,7 @@ export function MakeRealButton() {
 
 	return (
 		<button className="makeRealButton" onClick={handleClick}>
-			Make Real
+			Style Transfer
 		</button>
 	)
 }

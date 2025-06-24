@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import 'tldraw/tldraw.css'
 import { MakeRealButton } from './components/MakeRealButton'
+import { StyleTransferButton } from './components/StyleTransferButton'
 import { PreviewShapeUtil } from './PreviewShape/PreviewShape'
 import { uiOverrides } from './MoodboardShape/ui-overrides'
 
@@ -11,7 +12,12 @@ const Tldraw = dynamic(async () => (await import('tldraw')).Tldraw, {
 })
 
 const components = {
-	SharePanel: () => <MakeRealButton />,
+	SharePanel: () => (
+		<>
+			<MakeRealButton />
+			<StyleTransferButton />
+		</>
+	),
 }
 
 const shapeUtils = [PreviewShapeUtil]

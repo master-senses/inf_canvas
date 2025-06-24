@@ -44,7 +44,7 @@ async function realistic_Image(sketch: string, text: string, similarity: number)
     const input = {
         image: sketch,
         strength: 2 - (similarity * 2),
-        prompt: text + ", white background",
+        prompt: text + " ultrarealistic 3D render in UHD, WHITE background, product view, cinematic, industrial design by Apple",
         n_prompt: "(deformed iris, deformed pupils, semi-realistic, anime:1.4), text, close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck",
         steps: 35,
         max_width: 1024,
