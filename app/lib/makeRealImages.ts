@@ -16,7 +16,9 @@ export async function makeRealWith(editor: Editor, imageFetcher: ImageFetcher) {
 	if (selectedShapes.length === 0) throw Error('First select something to make real.')
 
 	// 2. Grab the bounding box of the selection (used for positioning later)
-	const bounds = editor.getSelectionPageBounds()
+	const imageShapes = selectedShapes.filter(shape => shape.type === 'image')
+	if (imageShapes.length === 0) throw Error('No image selected.')
+	const bounds = editor.getShapePageBounds(imageShapes[0].id)
 	if (!bounds) throw Error('Could not get bounds of selection.')
 	const { maxX, midY } = bounds
 	const newShapeId = createShapeId()
@@ -32,14 +34,14 @@ export async function makeRealWith(editor: Editor, imageFetcher: ImageFetcher) {
 	editor.createShape<PreviewShape>({
 		id: newShapeId2,
 		type: 'response',
-		x: 1.3*maxX + 60, // to the right of the selection
+		x: maxX + 60 + 400, // to the right of the selection
 		y: midY - (540 * 2) / 3 / 2, // half the height of the preview's initial shape
 		props: { image: '', w: (500 * 2) / 3, h: (540 * 2) / 3 },
 	})
 	editor.createShape<PreviewShape>({
 		id: newShapeId3,
 		type: 'response',
-		x: 1.2*maxX + 60, // to the right of the selection
+		x: maxX + 60 + 800, // to the right of the selection
 		y: midY - (540 * 2) / 3 / 2, // half the height of the preview's initial shape
 		props: { image: '', w: (500 * 2) / 3, h: (540 * 2) / 3 },
 	})
@@ -48,8 +50,6 @@ export async function makeRealWith(editor: Editor, imageFetcher: ImageFetcher) {
     const scale = Math.min(1, maxSize / bounds.width, maxSize / bounds.height)
 
 	// 3. Find the image shape and get its data directly
-	const imageShapes = selectedShapes.filter(shape => shape.type === 'image')
-	if (imageShapes.length === 0) throw Error('No image selected.')
 	
     const { blob } = await editor.toImage(imageShapes, {
         scale: scale,
