@@ -3,6 +3,7 @@ import { blobToBase64 } from './blobToBase64'
 import { getTextFromSelectedShapes } from './getSelectionAsText'
 import { generateStyleTransfer, generateSingleImage } from './generateImages'
 import { PreviewShape } from '../PreviewShape/PreviewShape'
+import { createImageGenerationRun, updateImageGenerationRun, generateRunId } from './database'
 
 type ImageFetcher = (
 	sketchDataUrl: string,
@@ -21,6 +22,9 @@ export async function makeRealWith(editor: Editor, imageFetcher: ImageFetcher) {
 	const bounds = editor.getShapePageBounds(imageShapes[0].id)
 	if (!bounds) throw Error('Could not get bounds of selection.')
 	const { maxX, midY } = bounds
+	
+	// Generate a unique run ID for this generation
+	const runId = generateRunId()
 	const newShapeId = createShapeId()
 	const newShapeId2 = createShapeId()
 	const newShapeId3 = createShapeId()
@@ -62,41 +66,61 @@ export async function makeRealWith(editor: Editor, imageFetcher: ImageFetcher) {
 	// 4. Extract any visible text (annotations, labels, etc.)
 	const selectionText = getTextFromSelectedShapes(editor)
 	console.log('Extracted text:', selectionText)
+	
+	// 5. Save initial run data to database
+	const similarity = 0.4 // Current hardcoded similarity value
+	const userId = 'anonymous' // TODO: Replace with actual user ID when auth is implemented
+	
+	await createImageGenerationRun({
+		runId,
+		sketch: sketchDataUrl,
+		prompt: selectionText,
+		similarity,
+		userId,
+		moodboardImages: [], // TODO: Add moodboard images when implemented
+	})
 
-	// 5. Layout parameters (tweak to taste)
+	// 6. Layout parameters (tweak to taste)
 	const GAP = 40 // horizontal gap between thumbnails
 	const WIDTH = 400
 	const HEIGHT = 300
 	const newShapeIds = [newShapeId, newShapeId2, newShapeId3]
 
 	try {
-		const imageUrls: string[] = await imageFetcher(sketchDataUrl, selectionText, 0.4)
+		const imageUrls: string[] = await imageFetcher(sketchDataUrl, selectionText, similarity)
 
 		if (!imageUrls || imageUrls.length === 0) {
 			throw Error('The image-generation service returned no images.')
 		}
 
-	for (let i = 0; i < imageUrls.length; i++) {
-		const url = imageUrls[i]
-		const id = createShapeId()
-		const imageAsset = await editor.getAssetForExternalContent({
-			type: 'url',
-			url: url,
+		// Update database with generated outputs
+		await updateImageGenerationRun({
+			runId,
+			outputs: imageUrls,
 		})
 
-		if (imageAsset) {
-			editor.updateShape<PreviewShape>({
-				id: newShapeIds[i],
-				type: 'response',
-				props: {
-					image: url,
-				},
+		for (let i = 0; i < imageUrls.length; i++) {
+			const url = imageUrls[i]
+			const id = createShapeId()
+			const imageAsset = await editor.getAssetForExternalContent({
+				type: 'url',
+				url: url,
 			})
+
+			if (imageAsset) {
+				editor.updateShape<PreviewShape>({
+					id: newShapeIds[i],
+					type: 'response',
+					props: {
+						image: url,
+					},
+				})
+			}
 		}
+	} catch (error) {
+		console.error('Error generating images:', error)
+		// Consider updating the database run with error status if needed
 	}
-} catch (error) {
-	console.error('Error generating images:', error)
-}
 } 
 
 export async function makeReal(editor: Editor) {

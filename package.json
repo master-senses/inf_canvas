@@ -10,6 +10,7 @@
 	},
 	"dependencies": {
 		"@popperjs/core": "^2.11.8",
+		"@supabase/supabase-js": "^2.50.3",
 		"next": "^14.2.30",
 		"node-fetch": "^2.7.0",
 		"react": "^18",
