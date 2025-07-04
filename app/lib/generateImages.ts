@@ -37,6 +37,11 @@ export async function generateStyleTransfer(sketch: string, text: string, simila
             headers: {
                 'Content-Type': 'application/json',
             },
+            body: JSON.stringify({
+                sketch,
+                text,
+                similarity
+            })
         })
         
         if (!response.ok) {
