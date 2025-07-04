@@ -280,39 +280,7 @@ async function runWorkflow(body: { workflow_id: string, prompt: any, files: any,
     return await resp.json()
 }
 
-async function getRunStatus(workflow_id: string, run_id: string) {
-    const url = `https://comfy.icu/api/v1/workflows/${workflow_id}/runs/${run_id}`
-    const resp = await fetch(url, {
-        headers: {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "authorization": "Bearer " + (process.env.COMFYICU_API_KEY || '')
-        }
-    })
-    return await resp.json()
-}
 
-async function pollRunStatus(workflow_id: string, run_id: string, maxAttempts = 30, delay = 10000): Promise<any> {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        try {
-            const status = await getRunStatus(workflow_id, run_id)
-            console.log(`Attempt ${attempt + 1}: Run status is ${status.status}`)
-
-            if (status.status === "COMPLETED") {
-                return status
-            } else if (status.status === "ERROR") {
-                throw new Error(`ComfyICU run failed: ${status.error || 'Unknown error'}`)
-            }
-
-            await new Promise((resolve) => setTimeout(resolve, delay))
-        } catch (error) {
-            console.error(`Error during polling: ${error}`)
-            if (attempt === maxAttempts - 1) throw error
-        }
-    }
-
-    throw new Error("Max polling attempts reached")
-}
 
 export async function POST(request: NextRequest) {
     try {
@@ -353,20 +321,11 @@ export async function POST(request: NextRequest) {
             pendingRuns.set(run.id, { resolve, reject, timeout })
         })
 
-        // Start polling as a fallback
-        const pollPromise = pollRunStatus(workflow_id, run.id).then(status => {
-            if (status.output_files && status.output_files.length > 0) {
-                return status.output_files.map((file: any) => file.url)
-            } else {
-                throw new Error('No output files in completed run')
-            }
-        })
-
-        // Race between webhook and polling
+        // Wait for webhook response
         try {
-            const images = await Promise.race([resultPromise, pollPromise])
+            const images = await resultPromise
             
-            // Clean up
+            // Clean up (should already be done by webhook, but just in case)
             const pending = pendingRuns.get(run.id)
             if (pending) {
                 clearTimeout(pending.timeout)
