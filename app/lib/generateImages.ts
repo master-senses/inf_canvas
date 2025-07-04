@@ -30,18 +30,7 @@ export async function generateSingleImage(sketch: string, text: string, similari
     }
 }
 
-export async function generateStyleTransfer(sketch: string, text: string, similarity: number): Promise<string[]> {
-    const files = {
-        "/input/helmet_sketch.jpg": sketch,
-        "/input/cyber_girl.png": "https://comfy.icu/api/v1/view/workflows/kUROkD8n6_dsFdlGn8EfO/input/cyber_girl.png",
-        "/input/cyberpunk_car - Copy (2).png": "https://comfy.icu/api/v1/view/workflows/kUROkD8n6_dsFdlGn8EfO/input/cyberpunk_car - Copy (2).png",
-        "/input/tree.png": "https://comfy.icu/api/v1/view/workflows/kUROkD8n6_dsFdlGn8EfO/input/tree.png",
-        "/input/robot_headshot.png": "https://comfy.icu/api/v1/view/workflows/kUROkD8n6_dsFdlGn8EfO/input/robot_headshot.png",
-        "/input/lady_glasses.png": "https://comfy.icu/api/v1/view/workflows/kUROkD8n6_dsFdlGn8EfO/input/lady_glasses.png",
-        "/input/dubai - Copy (2).png": "https://comfy.icu/api/v1/view/workflows/kUROkD8n6_dsFdlGn8EfO/input/dubai - Copy (2).png",
-        "/input/cyberpunk_sword - Copy (2).png": "https://comfy.icu/api/v1/view/workflows/kUROkD8n6_dsFdlGn8EfO/input/cyberpunk_sword - Copy (2).png",
-        "/input/red_glasses.png": "https://comfy.icu/api/v1/view/workflows/kUROkD8n6_dsFdlGn8EfO/input/red_glasses.png"
-    };
+export async function generateStyleTransfer(files: Record<string, string>, text: string, similarity: number): Promise<string[]> {
     try {
         const response = await fetch('/api/style-transfer', {
             method: 'POST',
