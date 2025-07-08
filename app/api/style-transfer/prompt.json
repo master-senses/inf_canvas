@@ -100,7 +100,7 @@
             "title": "Load Image"
         },
         "inputs": {
-            "image": "input/sketch.jpeg",
+            "image": "sketch.jpeg",
             "upload": "image"
         },
         "class_type": "LoadImage"
@@ -110,7 +110,7 @@
             "title": "Load Image"
         },
         "inputs": {
-            "image": "input/input_1.jpeg",
+            "image": "input_1.jpeg",
             "upload": "image"
         },
         "class_type": "LoadImage"
@@ -120,7 +120,7 @@
             "title": "Load Image"
         },
         "inputs": {
-            "image": "input/input_2.jpeg",
+            "image": "input_2.jpeg",
             "upload": "image"
         },
         "class_type": "LoadImage"
@@ -130,7 +130,7 @@
             "title": "Load Image"
         },
         "inputs": {
-            "image": "input/input_3.jpeg",
+            "image": "input_3.jpeg",
             "upload": "image"
         },
         "class_type": "LoadImage"
@@ -140,7 +140,7 @@
             "title": "Load Image"
         },
         "inputs": {
-            "image": "input/input_4.jpeg",
+            "image": "input_4.jpeg",
             "upload": "image"
         },
         "class_type": "LoadImage"
@@ -150,7 +150,7 @@
             "title": "Load Image"
         },
         "inputs": {
-            "image": "input/input_5.jpeg",
+            "image": "input_5.jpeg",
             "upload": "image"
         },
         "class_type": "LoadImage"
@@ -160,7 +160,7 @@
             "title": "Load Image"
         },
         "inputs": {
-            "image": "input/input_6.jpeg",
+            "image": "input_6.jpeg",
             "upload": "image"
         },
         "class_type": "LoadImage"
@@ -170,7 +170,7 @@
             "title": "Load Image"
         },
         "inputs": {
-            "image": "input/input_7.jpeg",
+            "image": "input_7.jpeg",
             "upload": "image"
         },
         "class_type": "LoadImage"

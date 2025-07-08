@@ -21,7 +21,7 @@ export async function makeRealWith(editor: Editor, imageFetcher: (payload: Image
 	const imageShapes = Array.from(allShapes)
   	.map(id => editor.getShape(id as TLShapeId)!)
   	.filter(s => s.type === 'image');
-	  console.log("number of images is ", imageShapes.length)
+	//   console.log("number of images is ", imageShapes.length)
 	if (imageShapes.length === 0) throw Error('No image selected.');
 	// console.log(imageShapes);
 	const topLevelImage = imageShapes.find(s => editor.getShapeAncestors(s.id).length === 0);
@@ -75,13 +75,12 @@ export async function makeRealWith(editor: Editor, imageFetcher: (payload: Image
 		background: true,
 		format: 'jpeg',
 	})
-	console
 	const sketchDataUrl = await blobToBase64(sketch_base64)
 
 	const images: ImagesPayload = { sketch: String(sketchDataUrl), moodboard: images_unsorted} // typecast to avoid error, it will always be a string
 
 	const selectionText = getTextFromSelectedShapes(editor)
-	console.log('Extracted text:', selectionText)
+	// console.log('Extracted text:', selectionText)
 
 	// 5. Layout parameters (tweak to taste)
 	const GAP = 40 // horizontal gap between thumbnails
@@ -115,7 +114,7 @@ export async function makeRealWith(editor: Editor, imageFetcher: (payload: Image
 		}
 	}
 } catch (error) {
-	console.error('Error generating images:', error)
+	// console.error('Error generating images:', error)
 }
 } 
 

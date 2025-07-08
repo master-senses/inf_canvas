@@ -9,7 +9,7 @@ import promptOrig from '../api/style-transfer/prompt.json'
 export function adjustLoadImages(desired: number, text: string) {
   // Deep-clone original prompt so we don't mutate imported module
   const prompt: Record<string, any> = JSON.parse(JSON.stringify(promptOrig))
-  console.log("number of images is: ", desired)
+  // console.log("number of images is: ", desired)
 
   // Collect all keys that are LoadImage nodes
   const loadImageKeys = Object.keys(prompt).filter(
@@ -17,7 +17,7 @@ export function adjustLoadImages(desired: number, text: string) {
   )
 
   const prompt_key = Object.keys(prompt).filter((k) => prompt[k].class_type === "CLIPTextEncode" && prompt[k].inputs.text.includes("detailed"))
-  prompt[prompt_key[0]].inputs.text = text
+  prompt[prompt_key[0]].inputs.text = text + ", ultrarealistic 3D render in UHD, WHITE background, product view, cinematic, industrial design by Apple"
   // Sort by their input file name number, descending
   loadImageKeys.sort((a, b) => {
     const getIdx = (key: string) => {
@@ -63,7 +63,7 @@ export function adjustLoadImages(desired: number, text: string) {
     while (current < desired) {
       const newKey = String(nextKeyNum++)
       prompt[newKey] = JSON.parse(JSON.stringify(template))
-      prompt[newKey].inputs.image = `input/input_${nextInputIdx++}.jpeg`
+      prompt[newKey].inputs.image = `input_${nextInputIdx++}.jpeg`
       current++
     }
   }
@@ -111,6 +111,6 @@ export function adjustLoadImages(desired: number, text: string) {
     inp.inputcount = desiredCount
   }
 
-  console.log(prompt)
+  // console.log(prompt)
   return prompt
 }

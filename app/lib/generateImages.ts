@@ -30,18 +30,18 @@ export async function generateSingleImage({ sketch }: ImagesPayload, text: strin
         const data = await response.json()
         return data.images
     } catch (error) {
-        console.error('Error calling image generation API:', error)
+        // console.error('Error calling image generation API:', error)
         throw error
     }
 }
 
 export async function generateStyleTransfer({ sketch, moodboard }: ImagesPayload, text: string, similarity: number): Promise<string[]> {
-    let files: Record<string, string> = {"input/sketch.jpeg": sketch};
+    let files: Record<string, string> = {"/input/sketch.jpeg": sketch};
 
     if (moodboard) {
         const moodboardArray = Array.isArray(moodboard) ? moodboard : [moodboard];
         for (let i = 0; i < moodboardArray.length; i++) {
-            files["input/input_" + (i + 1) + ".jpeg"] = moodboardArray[i];
+            files["/input/input_" + (i + 1) + ".jpeg"] = moodboardArray[i];
         }
     }
     
@@ -65,7 +65,7 @@ export async function generateStyleTransfer({ sketch, moodboard }: ImagesPayload
         const data = await response.json()
         return data.images
     } catch (error) {
-        console.error('Error calling image generation API:', error)
+        // console.error('Error calling image generation API:', error)
         throw error
     }
 }

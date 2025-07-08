@@ -36,25 +36,22 @@ export async function POST(request: NextRequest) {
             }
         }
         const fixed_prompt = adjustLoadImages(Object.keys(files).length, text)
-        console.log(Object.keys(files))
-        const run = await runWorkflow({ workflow_id: workflow_id, prompt: fixed_prompt, files: {} });
-        console.log(run);
+        const run = await runWorkflow({ workflow_id: workflow_id, prompt: fixed_prompt, files: files });
         const finalStatus = await pollRunStatus(workflow_id, run.id);
-        console.log(`Final status: ${finalStatus.status}`)
-        console.log(`Output: ${JSON.stringify(finalStatus.output, null, 2)}`);
+        // console.log(`Final status: ${finalStatus.status}`)
+        // console.log(`Output: ${JSON.stringify(finalStatus.output, null, 2)}`);
         return NextResponse.json({
             images: finalStatus.output.map((image: any) => image.url)
         })
     } catch (error) {
-        console.error('Error generating images:', error)
+        // console.error('Error generating images:', error)
         return NextResponse.json({ error: 'Failed to generate images' }, { status: 500 })
     }
 }
 
-const workflow_id = "kUROkD8n6_dsFdlGn8EfO"
+const workflow_id = "5ox-i_aoAdZB-_UxbeWFL"
 
 async function runWorkflow(body: {workflow_id: string, prompt: any, files: Record<string, string>}){
-    console.log("body", body)
     const url = "https://comfy.icu/api/v1/workflows/"+body.workflow_id+"/runs"
     const resp = await fetch(url, {
       "headers": {
@@ -90,7 +87,7 @@ async function pollRunStatus(
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
             const status = await getRunStatus(workflow_id, run_id);
-            console.log(`Attempt ${attempt + 1}: Run status is ${status.status}`);
+            // console.log(`Attempt ${attempt + 1}: Run status is ${status.status}`);
 
             if (status.status === "COMPLETED" || status.status === "ERROR") {
                 return status;
@@ -98,7 +95,7 @@ async function pollRunStatus(
 
             await new Promise((resolve) => setTimeout(resolve, delay));
         } catch (error) {
-            console.error(`Error during polling: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            // console.error(`Error during polling: ${error instanceof Error ? error.message : 'Unknown error'}`);
             throw error;
         }
     }
