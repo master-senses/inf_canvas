@@ -3,23 +3,31 @@ import { blobToBase64 } from './blobToBase64'
 import { getTextFromSelectedShapes } from './getSelectionAsText'
 import { generateStyleTransfer, generateSingleImage } from './generateImages'
 import { PreviewShape } from '../PreviewShape/PreviewShape'
+import { ImagesPayload } from './types'
 
-type ImageFetcher = (
-	sketchDataUrl: string,
-	selectionText: string,
-	strength: number
-) => Promise<string[]>
+// type ImageFetcher = (
+// 	sketchDataUrl: string | string[],
+// 	selectionText: string,
+// 	strength: number
+// ) => Promise<string[]>
 
-export async function makeRealWith(editor: Editor, imageFetcher: ImageFetcher) {
+export async function makeRealWith(editor: Editor, imageFetcher: (payload: ImagesPayload, text: string, similarity: number) => Promise<string[]>) {
 	// 1. Make sure something is selected
-	const selectedShapes = editor.getSelectedShapes()
+	const selectedShapes = editor.getSelectedShapeIds()
+	const allShapes = editor.getShapeAndDescendantIds(selectedShapes)
 	if (selectedShapes.length === 0) throw Error('First select something to make real.')
-
 	// 2. Grab the bounding box of the selection (used for positioning later)
-	const imageShapes = selectedShapes.filter(shape => shape.type === 'image')
-	if (imageShapes.length === 0) throw Error('No image selected.')
-	const bounds = editor.getShapePageBounds(imageShapes[0].id)
-	if (!bounds) throw Error('Could not get bounds of selection.')
+	// const frameShapes = selectedShapes.filter(shape => shape.type === 'frame')
+	const imageShapes = Array.from(allShapes)
+  	.map(id => editor.getShape(id as TLShapeId)!)
+  	.filter(s => s.type === 'image');
+	  console.log("number of images is ", imageShapes.length)
+	if (imageShapes.length === 0) throw Error('No image selected.');
+	// console.log(imageShapes);
+	const topLevelImage = imageShapes.find(s => editor.getShapeAncestors(s.id).length === 0);
+	if (!topLevelImage) throw Error('No sketch found');
+	const bounds = editor.getShapePageBounds(topLevelImage.id);
+	if (!bounds) throw Error('Could not get bounds of selection.');
 	const { maxX, midY } = bounds
 	const newShapeId = createShapeId()
 	const newShapeId2 = createShapeId()
@@ -48,18 +56,30 @@ export async function makeRealWith(editor: Editor, imageFetcher: ImageFetcher) {
 	
     const maxSize = 1000
     const scale = Math.min(1, maxSize / bounds.width, maxSize / bounds.height)
+	const moodboard_images = imageShapes.filter(s => s.id != topLevelImage.id)
+	let images_unsorted: string | string[] = []
+	if (moodboard_images.length > 0) {
+		let blobs: Blob[] = []
+		for (const image of moodboard_images) {
+			const { blob } = await editor.toImage([image], {
+				scale: scale,
+				background: true,
+				format: 'jpeg',
+			})
+			blobs.push(blob)
+		}
+		images_unsorted = await blobToBase64(blobs)
+	}
+	const {blob: sketch_base64} = await editor.toImage([topLevelImage], {
+		scale: scale,
+		background: true,
+		format: 'jpeg',
+	})
+	console
+	const sketchDataUrl = await blobToBase64(sketch_base64)
 
-	// 3. Find the image shape and get its data directly
-	
-    const { blob } = await editor.toImage(imageShapes, {
-        scale: scale,
-        background: true,
-        format: 'jpeg',
-    })
-    const sketchDataUrl = await blobToBase64(blob!)
+	const images: ImagesPayload = { sketch: String(sketchDataUrl), moodboard: images_unsorted} // typecast to avoid error, it will always be a string
 
-
-	// 4. Extract any visible text (annotations, labels, etc.)
 	const selectionText = getTextFromSelectedShapes(editor)
 	console.log('Extracted text:', selectionText)
 
@@ -70,7 +90,7 @@ export async function makeRealWith(editor: Editor, imageFetcher: ImageFetcher) {
 	const newShapeIds = [newShapeId, newShapeId2, newShapeId3]
 
 	try {
-		const imageUrls: string[] = await imageFetcher(sketchDataUrl, selectionText, 0.4)
+		const imageUrls: string[] = await imageFetcher(images, selectionText, 0.4)
 
 		if (!imageUrls || imageUrls.length === 0) {
 			throw Error('The image-generation service returned no images.')

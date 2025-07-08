@@ -1,10 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prompt from './prompt.json'
+import { uploadToBucket } from '@/app/lib/supabase'
+// import { convertToJPEG } from '@/app/lib/utils'
+import sharp from 'sharp'
+import { v4 as uuidv4 } from 'uuid'
+import { adjustLoadImages } from '@/app/lib/comfy'
 
 export async function POST(request: NextRequest) {
     try {
         const { files, text, similarity } = await request.json()
-        const run = await runWorkflow({ workflow_id, prompt, files });
+        const moodboard_folder = uuidv4()
+        for (let key in files) {
+            const matches = files[key].match(/^data:(image\/\w+);base64,(.+)$/);
+            if (!matches) {
+                throw new Error('Invalid base64 image string');
+            }
+            const base64Data = matches[2];
+            const buffer = Buffer.from(base64Data, 'base64');
+
+            // Step 3: Convert PNG → JPEG using sharp
+            const jpegBuffer = await sharp(buffer).jpeg().toBuffer();
+            if (key.includes('sketch')) {
+                const { data, error } = await uploadToBucket(jpegBuffer, 'sketches', '')
+                if (error) {
+                    throw new Error('Failed to upload sketch to bucket: ' + error)
+                }
+                files[key] = data
+            } else {
+
+                const { data, error } = await uploadToBucket(jpegBuffer, 'moodboard', moodboard_folder)
+                if (error) {
+                    throw new Error('Failed to upload moodboard to bucket: ' + error)
+                }
+                files[key] = data
+            }
+        }
+        const fixed_prompt = adjustLoadImages(Object.keys(files).length, text)
+        console.log(Object.keys(files))
+        const run = await runWorkflow({ workflow_id: workflow_id, prompt: fixed_prompt, files: {} });
         console.log(run);
         const finalStatus = await pollRunStatus(workflow_id, run.id);
         console.log(`Final status: ${finalStatus.status}`)
@@ -21,6 +54,7 @@ export async function POST(request: NextRequest) {
 const workflow_id = "kUROkD8n6_dsFdlGn8EfO"
 
 async function runWorkflow(body: {workflow_id: string, prompt: any, files: Record<string, string>}){
+    console.log("body", body)
     const url = "https://comfy.icu/api/v1/workflows/"+body.workflow_id+"/runs"
     const resp = await fetch(url, {
       "headers": {
