@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import prompt from './prompt.json'
 import { uploadToBucket } from '@/app/lib/supabase'
-// import { convertToJPEG } from '@/app/lib/utils'
 import sharp from 'sharp'
 import { v4 as uuidv4 } from 'uuid'
 import { adjustLoadImages } from '@/app/lib/comfy'
