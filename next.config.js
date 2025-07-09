@@ -1,10 +1,9 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
 
-module.exports = nextConfig
-// Allow images from r2.comfy.icu
-module.exports = {
-  ...nextConfig,
+const nextConfig = withBundleAnalyzer({
   images: {
     remotePatterns: [
       {
@@ -13,20 +12,14 @@ module.exports = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'replicate.delivery',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
-};
-// Allow images from replicate.delivery
-module.exports.images.remotePatterns.push({
-  protocol: 'https',
-  hostname: 'replicate.delivery',
-  port: '',
-  pathname: '/**',
-});
+})
 
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true',
-})
-module.exports = withBundleAnalyzer({
-  /* existing config */
-})
+module.exports = nextConfig
