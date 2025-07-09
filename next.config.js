@@ -23,3 +23,10 @@ module.exports.images.remotePatterns.push({
   port: '',
   pathname: '/**',
 });
+
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+module.exports = withBundleAnalyzer({
+  /* existing config */
+})
