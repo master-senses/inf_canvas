@@ -45,6 +45,7 @@ export async function generateStyleTransfer({ sketch, moodboard }: ImagesPayload
     }
     
     try {
+        console.log('[style-transfer] sending request, files:', Object.keys(files).length)
         const response = await fetch('/api/style-transfer', {
             method: 'POST',
             headers: {
@@ -56,15 +57,16 @@ export async function generateStyleTransfer({ sketch, moodboard }: ImagesPayload
                 similarity
             })
         })
-        
+        console.log('[style-transfer] response status:', response.status)
         if (!response.ok) {
+            const errBody = await response.text()
+            console.error('[style-transfer] error body:', errBody)
             throw new Error('Failed to generate images')
         }
-        
         const data = await response.json()
         return data.images
     } catch (error) {
-        // console.error('Error calling image generation API:', error)
+        console.error('[style-transfer] client error:', error)
         throw error
     }
 }
