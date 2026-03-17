@@ -1,37 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadToBucket } from '@/app/lib/supabase'
 import sharp from 'sharp'
-import { v4 as uuidv4 } from 'uuid'
+import { fal } from '@fal-ai/client'
 import { adjustLoadImages } from '@/app/lib/comfy'
 
 export async function POST(request: NextRequest) {
     try {
+        const key = process.env.FAL_KEY
+        if (!key) return NextResponse.json({ error: 'Server missing FAL_KEY' }, { status: 500 })
+        fal.config({ credentials: key })
+
         const { files, text, similarity } = await request.json()
-        const moodboard_folder = uuidv4()
-        for (let key in files) {
-            const matches = files[key].match(/^data:(image\/\w+);base64,(.+)$/);
-            if (!matches) {
-                throw new Error('Invalid base64 image string');
-            }
-            const base64Data = matches[2];
-            const buffer = Buffer.from(base64Data, 'base64');
-
-            // Step 3: Convert PNG → JPEG using sharp
+        for (let fileKey in files) {
+            const matches = files[fileKey].match(/^data:(image\/\w+);base64,(.+)$/);
+            if (!matches) throw new Error('Invalid base64 image string');
+            const buffer = Buffer.from(matches[2], 'base64');
             const jpegBuffer = await sharp(buffer).jpeg().toBuffer();
-            if (key.includes('sketch')) {
-                const { data, error } = await uploadToBucket(jpegBuffer, 'sketches', '')
-                if (error) {
-                    throw new Error('Failed to upload sketch to bucket: ' + error)
-                }
-                files[key] = data
-            } else {
-
-                const { data, error } = await uploadToBucket(jpegBuffer, 'moodboard', moodboard_folder)
-                if (error) {
-                    throw new Error('Failed to upload moodboard to bucket: ' + error)
-                }
-                files[key] = data
-            }
+            const blob = new Blob([new Uint8Array(jpegBuffer)], { type: 'image/jpeg' })
+            files[fileKey] = await fal.storage.upload(blob)
         }
         const fixed_prompt = adjustLoadImages(Object.keys(files).length, text)
         const run = await runWorkflow({ workflow_id: workflow_id, prompt: fixed_prompt, files: files });
