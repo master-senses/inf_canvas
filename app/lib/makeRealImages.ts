@@ -96,22 +96,13 @@ export async function makeRealWith(editor: Editor, imageFetcher: (payload: Image
 		}
 
 	for (let i = 0; i < imageUrls.length; i++) {
-		const url = imageUrls[i]
-		const id = createShapeId()
-		const imageAsset = await editor.getAssetForExternalContent({
-			type: 'url',
-			url: url,
+		editor.updateShape<PreviewShape>({
+			id: newShapeIds[i],
+			type: 'response',
+			props: {
+				image: imageUrls[i],
+			},
 		})
-
-		if (imageAsset) {
-			editor.updateShape<PreviewShape>({
-				id: newShapeIds[i],
-				type: 'response',
-				props: {
-					image: url,
-				},
-			})
-		}
 	}
 } catch (error) {
 	// console.error('Error generating images:', error)

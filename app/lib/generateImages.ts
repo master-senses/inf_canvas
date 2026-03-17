@@ -1,4 +1,3 @@
-import { uploadToBucket } from "./supabase"
 import { ImagesPayload } from "./types"
 // import { convertToJPEG } from "./utils"
 
