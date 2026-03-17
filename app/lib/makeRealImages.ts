@@ -5,12 +5,6 @@ import { generateStyleTransfer, generateSingleImage } from './generateImages'
 import { PreviewShape } from '../PreviewShape/PreviewShape'
 import { ImagesPayload } from './types'
 
-// type ImageFetcher = (
-// 	sketchDataUrl: string | string[],
-// 	selectionText: string,
-// 	strength: number
-// ) => Promise<string[]>
-
 export async function makeRealWith(editor: Editor, imageFetcher: (payload: ImagesPayload, text: string, similarity: number) => Promise<string[]>) {
 	// 1. Make sure something is selected
 	const selectedShapes = editor.getSelectedShapeIds()
@@ -96,22 +90,13 @@ export async function makeRealWith(editor: Editor, imageFetcher: (payload: Image
 		}
 
 	for (let i = 0; i < imageUrls.length; i++) {
-		const url = imageUrls[i]
-		const id = createShapeId()
-		const imageAsset = await editor.getAssetForExternalContent({
-			type: 'url',
-			url: url,
+		editor.updateShape<PreviewShape>({
+			id: newShapeIds[i],
+			type: 'response',
+			props: {
+				image: imageUrls[i],
+			},
 		})
-
-		if (imageAsset) {
-			editor.updateShape<PreviewShape>({
-				id: newShapeIds[i],
-				type: 'response',
-				props: {
-					image: url,
-				},
-			})
-		}
 	}
 } catch (error) {
 	// console.error('Error generating images:', error)

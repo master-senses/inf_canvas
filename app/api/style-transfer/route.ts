@@ -1,103 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadToBucket } from '@/app/lib/supabase'
 import sharp from 'sharp'
-import { v4 as uuidv4 } from 'uuid'
+import { fal } from '@fal-ai/client'
 import { adjustLoadImages } from '@/app/lib/comfy'
 
+const FAL_APP_ID = process.env.FAL_APP_ID || 'YOUR_USERNAME/comfyui-style-transfer'
+
 export async function POST(request: NextRequest) {
-    try {
-        const { files, text, similarity } = await request.json()
-        const moodboard_folder = uuidv4()
-        for (let key in files) {
-            const matches = files[key].match(/^data:(image\/\w+);base64,(.+)$/);
-            if (!matches) {
-                throw new Error('Invalid base64 image string');
-            }
-            const base64Data = matches[2];
-            const buffer = Buffer.from(base64Data, 'base64');
-
-            // Step 3: Convert PNG → JPEG using sharp
-            const jpegBuffer = await sharp(buffer).jpeg().toBuffer();
-            if (key.includes('sketch')) {
-                const { data, error } = await uploadToBucket(jpegBuffer, 'sketches', '')
-                if (error) {
-                    throw new Error('Failed to upload sketch to bucket: ' + error)
-                }
-                files[key] = data
-            } else {
-
-                const { data, error } = await uploadToBucket(jpegBuffer, 'moodboard', moodboard_folder)
-                if (error) {
-                    throw new Error('Failed to upload moodboard to bucket: ' + error)
-                }
-                files[key] = data
-            }
-        }
-        const fixed_prompt = adjustLoadImages(Object.keys(files).length, text)
-        const run = await runWorkflow({ workflow_id: workflow_id, prompt: fixed_prompt, files: files });
-        const finalStatus = await pollRunStatus(workflow_id, run.id);
-        // console.log(`Final status: ${finalStatus.status}`)
-        // console.log(`Output: ${JSON.stringify(finalStatus.output, null, 2)}`);
-        return NextResponse.json({
-            images: finalStatus.output.map((image: any) => image.url)
-        })
-    } catch (error) {
-        // console.error('Error generating images:', error)
-        return NextResponse.json({ error: 'Failed to generate images' }, { status: 500 })
+  try {
+    const key = process.env.FAL_KEY
+    if (!key) {
+      console.error('FAL_KEY is not set')
+      return NextResponse.json({ error: 'Server missing FAL_KEY' }, { status: 500 })
     }
-}
+    fal.config({ credentials: key })
 
-const workflow_id = "5ox-i_aoAdZB-_UxbeWFL"
+    const { files, text } = (await request.json()) as {
+      files: Record<string, string>
+      text?: string
+    }
 
-async function runWorkflow(body: {workflow_id: string, prompt: any, files: Record<string, string>}){
-    const url = "https://comfy.icu/api/v1/workflows/"+body.workflow_id+"/runs"
-    const resp = await fetch(url, {
-      "headers": {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "authorization": "Bearer " + process.env.COMFYICU_API_KEY
+    const uploadedFiles: Record<string, string> = {}
+    for (const inputPath of Object.keys(files)) {
+      const value = files[inputPath]
+      const matches = value.match(/^data:(image\/\w+);base64,(.+)$/)
+      if (!matches) throw new Error('Invalid base64 image string')
+      const buffer = Buffer.from(matches[2], 'base64')
+      const jpegBuffer = await sharp(buffer).jpeg({ quality: 90 }).toBuffer()
+      const blob = new Blob([new Uint8Array(jpegBuffer)], { type: 'image/jpeg' })
+      const url = await fal.storage.upload(blob)
+      const filename = inputPath.split('/').pop() || 'input.jpeg'
+      uploadedFiles[filename] = url
+    }
+
+    const workflow = adjustLoadImages(Object.keys(files).length, text ?? '')
+
+    const result = await fal.subscribe(FAL_APP_ID, {
+      input: {
+        workflow,
+        files: uploadedFiles,
       },
-      "body": JSON.stringify(body),
-      "method": "POST"
-    });
-    return await resp.json()
-}
-
-async function getRunStatus(workflow_id: string, run_id: string) {
-    const url =
-        "https://comfy.icu/api/v1/workflows/" + workflow_id + "/runs/" + run_id;
-    const resp = await fetch(url, {
-        headers: {
-            accept: "application/json",
-            "content-type": "application/json",
-            authorization: "Bearer " + process.env.COMFYICU_API_KEY,
-        },
-    });
-    return await resp.json();
-}
-
-async function pollRunStatus(
-    workflow_id: string,
-    run_id: string,
-    maxAttempts = 30,
-    delay = 10000
-) {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        try {
-            const status = await getRunStatus(workflow_id, run_id);
-            // console.log(`Attempt ${attempt + 1}: Run status is ${status.status}`);
-
-            if (status.status === "COMPLETED" || status.status === "ERROR") {
-                return status;
-            }
-
-            await new Promise((resolve) => setTimeout(resolve, delay));
-        } catch (error) {
-            // console.error(`Error during polling: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            throw error;
+      logs: true,
+      onQueueUpdate: (update: { status?: string; logs?: Array<{ message?: string }> }) => {
+        if (update.status === 'IN_PROGRESS' && update.logs) {
+          update.logs.map((log) => log.message).forEach((msg) => msg && console.log(msg))
         }
-    }
+      },
+    })
 
-    throw new Error("Max polling attempts reached");
+    const data = result.data as { images?: Array<{ url?: string }> }
+    const images = Array.isArray(data?.images)
+      ? (data.images.map((img) => img?.url).filter(Boolean) as string[])
+      : []
+
+    return NextResponse.json({ images })
+  } catch (error: unknown) {
+    const err = error as { status?: number; body?: unknown }
+    console.error('Style transfer error:', err.status, JSON.stringify(err.body, null, 2))
+    return NextResponse.json(
+      { error: 'Failed to generate images', details: err.body },
+      { status: 500 },
+    )
+  }
 }
-
